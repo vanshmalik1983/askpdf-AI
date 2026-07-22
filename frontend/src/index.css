@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+    background-image: none;
+  }
+  ::selection {
+    background-color: #ffd447;
+    color: #1b1b1f;
+  }
+  :focus-visible {
+    outline: 2px solid #3355ff;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-6 md:px-10;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-ink px-6 py-3
+           text-sm font-semibold text-paper transition-all duration-200
+           hover:bg-cobalt hover:shadow-flag active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-ink/15
+           bg-transparent px-6 py-3 text-sm font-semibold text-ink transition-all duration-200
+           hover:border-ink/40 hover:bg-white active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-ink/70
+           transition-colors hover:text-cobalt;
+  }
+
+  .field-label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-soft;
+  }
+
+  .field-input {
+    @apply w-full rounded-lg border border-paper-line bg-white px-4 py-3 text-[15px] text-ink
+           placeholder:text-ink-faint transition-colors duration-150
+           focus:border-cobalt focus:outline-none focus:ring-2 focus:ring-cobalt/15;
+  }
+
+  .card {
+    @apply rounded-card border border-paper-line bg-white shadow-paper;
+  }
+
+  .marker-underline {
+    background-image: linear-gradient(#ffd447, #ffd447);
+    background-repeat: no-repeat;
+    background-position: 0 88%;
+    background-size: 100% 40%;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-soft;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

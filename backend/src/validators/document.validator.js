@@ -1,0 +1,8 @@
+import { param, query } from "express-validator";
+
+export const documentIdRules = [param("documentId").isMongoId().withMessage("Invalid document id")];
+
+export const paginationRules = [
+  query("page").optional().isInt({ min: 1 }).toInt(),
+  query("limit").optional().isInt({ min: 1, max: 50 }).toInt(),
+];

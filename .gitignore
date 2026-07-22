@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Build files
+dist/
+*.tsbuildinfo
+
+# Environment files
+.env
+*.env
+
+# OS files
+.DS_Store
+
+# Documentation
+docs/
+
+# README files
+README.md
+backend/README.md
+frontend/README.md
