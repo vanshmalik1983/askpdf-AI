@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useMemo,
+  ReactNode,
+} from "react";
 import { api, setTokens, clearTokens, ApiError } from "@/lib/api";
 
 interface User {
@@ -11,7 +18,11 @@ interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (
+    name: string,
+    email: string,
+    password: string
+  ) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -23,39 +34,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const persistUser = (user: User) => {
+    localStorage.setItem(
+      USER_STORAGE_KEY,
+      JSON.stringify(user)
+    );
+    setUser(user);
+  };
+
   useEffect(() => {
-    const stored = localStorage.getItem(USER_STORAGE_KEY);
-    if (stored) {
+    const storedUser = localStorage.getItem(USER_STORAGE_KEY);
+
+    if (storedUser) {
       try {
-        setUser(JSON.parse(stored));
-      } catch {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error(
+          "Failed to parse stored user data:",
+          error
+        );
         localStorage.removeItem(USER_STORAGE_KEY);
       }
     }
+
     setIsLoading(false);
   }, []);
 
   async function login(email: string, password: string) {
     const result = await api.login({ email, password });
+
     setTokens(result.accessToken, result.refreshToken);
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(result.user));
-    setUser(result.user);
+    persistUser(result.user);
   }
 
-  async function register(name: string, email: string, password: string) {
-    const result = await api.register({ name, email, password });
+  async function register(
+    name: string,
+    email: string,
+    password: string
+  ) {
+    const result = await api.register({
+      name,
+      email,
+      password,
+    });
+
     setTokens(result.accessToken, result.refreshToken);
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(result.user));
-    setUser(result.user);
+    persistUser(result.user);
   }
 
   async function logout() {
     try {
       await api.logout();
-    } catch (err) {
-      // Even if the server call fails (e.g. token already expired),
-      // the client-side session should still end cleanly.
-      if (!(err instanceof ApiError)) throw err;
+    } catch (error) {
+      // Clear client-side session even if logout request fails.
+      if (!(error instanceof ApiError)) throw error;
     } finally {
       clearTokens();
       localStorage.removeItem(USER_STORAGE_KEY);
@@ -63,15 +95,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const value = useMemo(
+    () => ({
+      user,
+      isLoading,
+      login,
+      register,
+      logout,
+    }),
+    [user, isLoading]
+  );
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within an AuthProvider");
-  return ctx;
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error(
+      "useAuth must be used within an AuthProvider"
+    );
+  }
+
+  return context;
 }
