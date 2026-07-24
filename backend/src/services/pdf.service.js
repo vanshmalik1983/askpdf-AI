@@ -2,37 +2,54 @@ import fs from "fs/promises";
 import pdfParse from "pdf-parse";
 import { ApiError } from "../utils/apiResponse.js";
 
+// PDFs with less than 20 characters of extracted text are treated as invalid.
+const MIN_TEXT_LENGTH = 20;
+
 /**
- * Extracts per-page text from a PDF buffer.
+ * PDF text extraction service.
  *
- * pdf-parse gives us the full text with form-feed-ish page breaks via
- * its `pagerender` hook, which we use to tag each page's text before
- * it's concatenated — this is what lets citations point to a specific
- * page number later in the pipeline.
+ * Extracts text page-by-page so that downstream features such as
+ * chunking, citations, summaries, and question answering can retain
+ * accurate page references.
  */
 export const pdfService = {
   async extractPages(filePath) {
     const buffer = await fs.readFile(filePath);
 
     const pages = [];
+
     const options = {
       pagerender: async (pageData) => {
         const textContent = await pageData.getTextContent();
-        const text = textContent.items.map((item) => item.str).join(" ");
-        pages.push({ pageNumber: pageData.pageIndex + 1, text });
+
+        const text = textContent.items
+          .map((item) => item.str)
+          .join(" ")
+          .trim();
+
+        pages.push({
+          pageNumber: pageData.pageIndex + 1,
+          text,
+        });
+
         return text;
       },
     };
 
     const data = await pdfParse(buffer, options);
 
-    if (!data.text || data.text.trim().length < 20) {
+    const extractedText = data.text?.trim() ?? "";
+
+    if (extractedText.length < MIN_TEXT_LENGTH) {
       throw new ApiError(
         422,
         "This PDF appears to be empty or is a scanned image without extractable text. Try an OCR'd version."
       );
     }
 
-    return { pages, totalPages: data.numpages };
+    return {
+      pages,
+      totalPages: data.numpages,
+    };
   },
 };
